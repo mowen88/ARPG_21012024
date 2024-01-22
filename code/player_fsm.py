@@ -11,6 +11,10 @@ class Dash:
 	def state_logic(self, player):
 		if abs(player.vel.x) < 0.2:
 			player.vel.x = 0
+		if ACTIONS['right_click']:
+			ACTIONS['right_click'] = False
+			return Jump(player)
+			
 		if self.timer <= 0:
 			return Idle(player)
 
@@ -19,6 +23,7 @@ class Dash:
 		player.acc.x = 0
 		player.vel.x -= 0.05 * dt * player.facing
 		player.physics_x(dt)
+		player.physics_y(dt)
 		player.animate('attack_1', 0.25 * dt, False)
 
 class AirDash:
@@ -31,6 +36,10 @@ class AirDash:
 
 		if abs(player.vel.x) < 0.2:
 			player.vel.x = 0
+		if ACTIONS['right_click']:
+			ACTIONS['right_click'] = False
+			if player.jump_counter > 0:
+				return DoubleJump(player)
 		if self.timer <= 0:		
 			return Fall(player)
 
@@ -39,7 +48,7 @@ class AirDash:
 		player.acc.x = 0
 		player.vel.x -= 0.05 * dt * player.facing
 		player.physics_x(dt)
-		player.animate('attack_1', 0.25 * dt, False)
+		player.animate('attack_2', 0.25 * dt, False)
 
 class AirAttack:
 	def __init__(self, player):
@@ -83,7 +92,7 @@ class AirAttack2(AirAttack):
 	def __init__(self, player):
 		AirAttack. __init__(self, player)
 
-		self.timer = 30
+		self.timer = 24
 		
 	def state_logic(self, player):
 		if ACTIONS['left_click']:
@@ -143,7 +152,7 @@ class Attack:
 		self.attack_pending = False
 		self.timer = 24
 		self.special_timer = 0
-		player.vel.x = 8 * player.facing
+		player.vel.x = 4 * player.facing
 
 	def build_up_special(self, player, dt):
 		mouse = pygame.mouse.get_pressed()
@@ -178,7 +187,7 @@ class Attack2(Attack):
 	def __init__(self, player):
 		Attack. __init__(self, player)
 
-		self.timer = 30
+		self.timer = 24
 
 	def state_logic(self, player):
 		if ACTIONS['left_click']:
@@ -280,7 +289,6 @@ class Fall:
 
 		if not player.alive:
 			return Death(player)
-
 		if ACTIONS['left_click'] and player.can_attack:
 			return AirAttack(player)
 		if ACTIONS['space'] and player.can_dash:
@@ -595,40 +603,37 @@ class OnLadderMove:
 
 		player.animate('on_ladder_move', 0.25 * dt)
 
-class Skid:
+class UpperCut(Fall):
 	def __init__(self, player):
-		
-		player.jump_counter = 1
+
 		player.frame_index = 0
+		player.jump(player.jump_height * 1.5)
+		player.scene.create_particle('jump', player.hitbox.midbottom)
 
 	def state_logic(self, player):
-
-		if player.scene.exiting:
-			return Hold(player)
 
 		if not player.alive:
 			return Death(player)
 
-		if not player.on_ground:
+		if player.vel.y >= 0:
 			return Fall(player)
 
 		if ACTIONS['left_click']:
-			player.fire()
+			return AirAttack(player)
 
-		if ACTIONS['right_click']:
+		if ACTIONS['right_click'] and player.jump_counter > 0:
 			ACTIONS['right_click'] = False
-			return Jump(player)
 
-		if abs(player.vel.x) <= 0.1:
-			return Idle(player)
+			return DoubleJump(player)
 
 	def update(self, player, dt):
 
 		player.acc.x = 0
-		player.physics_x(dt)
+		player.input()
 		player.physics_y(dt)
-		player.animate('skid', 0.25 * dt, False)
-	
+
+		player.animate('jump', 0.25 * dt, False)
+
 class Landing:
 	def __init__(self, player):
 
@@ -696,37 +701,6 @@ class Jump(Fall):
 
 		player.animate('jump', 0.25 * dt, False)
 
-class UpperCut(Fall):
-	def __init__(self, player):
-
-		player.frame_index = 0
-		player.jump(player.jump_height * 1.5)
-		player.scene.create_particle('jump', player.hitbox.midbottom)
-
-	def state_logic(self, player):
-
-		if not player.alive:
-			return Death(player)
-
-		if player.vel.y >= 0:
-			return Fall(player)
-
-		if ACTIONS['left_click']:
-			return AirAttack(player)
-
-		if ACTIONS['right_click'] and player.jump_counter > 0:
-			ACTIONS['right_click'] = False
-
-			return DoubleJump(player)
-
-	def update(self, player, dt):
-
-		player.acc.x = 0
-		player.input()
-		player.physics_y(dt)
-
-		player.animate('jump', 0.25 * dt, False)
-
 class DoubleJump(Fall):
 	def __init__(self, player):
 
@@ -739,8 +713,10 @@ class DoubleJump(Fall):
 
 		if not player.alive:
 			return Death(player)
-
-		# self.gun is the gun you have before the double jump, and comparing it with a new one if you collected one while double jumping 
+		if ACTIONS['left_click'] and player.can_attack:
+			return AirAttack(player)
+		if ACTIONS['space'] and player.can_dash:
+			return AirDash(player)
 		if player.vel.y >= 0:
 			return Fall(player)
 
@@ -750,5 +726,4 @@ class DoubleJump(Fall):
 		player.input()
 		player.physics_x(dt)
 		player.physics_y(dt)
-
 		player.animate('jump', 0.25 * dt, False)

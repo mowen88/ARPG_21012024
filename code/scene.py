@@ -67,7 +67,7 @@ class Scene(State):
 		self.drawn_sprites.offset_draw(self.player.rect.center)
 		self.debug([str('FPS: '+ str(round(self.game.clock.get_fps(), 2))),
 					str('vel: '+ str(round(self.player.vel, 2))),
-					str('facing: '+ str(self.player.can_dash)),
+					str('facing: '+ str(self.player.jump_counter)),
 					str('state: '+ str(self.player.state)),
 					None,])
 
