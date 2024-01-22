@@ -5,14 +5,15 @@ class Dash:
 	def __init__(self, player):
 		
 		player.frame_index = 0
+		ACTIONS['c'] = False
 		self.timer = 24
 		player.vel.x = 20 * player.facing
 
 	def state_logic(self, player):
 		if abs(player.vel.x) < 0.2:
 			player.vel.x = 0
-		if ACTIONS['right_click']:
-			ACTIONS['right_click'] = False
+		if ACTIONS['up']:
+			ACTIONS['up'] = False
 			return Jump(player)
 			
 		if self.timer <= 0:
@@ -21,9 +22,9 @@ class Dash:
 	def update(self, player, dt):
 		self.timer -= dt
 		player.acc.x = 0
-		player.vel.x -= 0.05 * dt * player.facing
+		player.vel.x -= 0.04 * dt * player.facing
+		player.vel.y = 0
 		player.physics_x(dt)
-		player.physics_y(dt)
 		player.animate('attack_1', 0.25 * dt, False)
 
 class AirDash:
@@ -31,13 +32,14 @@ class AirDash:
 		Dash. __init__(self, player)
 
 		player.can_dash = False
+		ACTIONS['c'] = False
 		
 	def state_logic(self, player):
 
 		if abs(player.vel.x) < 0.2:
 			player.vel.x = 0
-		if ACTIONS['right_click']:
-			ACTIONS['right_click'] = False
+		if ACTIONS['up']:
+			ACTIONS['up'] = False
 			if player.jump_counter > 0:
 				return DoubleJump(player)
 		if self.timer <= 0:		
@@ -46,7 +48,8 @@ class AirDash:
 	def update(self, player, dt):
 		self.timer -= dt
 		player.acc.x = 0
-		player.vel.x -= 0.05 * dt * player.facing
+		player.vel.x -= 0.04 * dt * player.facing
+		player.vel.y = 0
 		player.physics_x(dt)
 		player.animate('attack_2', 0.25 * dt, False)
 
@@ -55,20 +58,20 @@ class AirAttack:
 		
 		player.frame_index = 0
 		player.combo_counter += 1
-		ACTIONS['left_click'] = False
+		ACTIONS['x'] = False
 		self.attack_pending = False
 		self.timer = 24
 		self.special_timer = 0
 
 	def build_up_special(self, player, dt):
-		mouse = pygame.mouse.get_pressed()
-		if mouse[0] == 1:
+		keys = pygame.key.get_pressed()
+		if keys[pygame.K_x]:
 			self.special_timer += dt
 		else:
 			self.special_timer = 0
 
 	def state_logic(self, player):
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			self.attack_pending = True
 		if self.special_timer >= 16:
 			return Stomp(player)
@@ -95,7 +98,7 @@ class AirAttack2(AirAttack):
 		self.timer = 24
 		
 	def state_logic(self, player):
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			self.attack_pending = True
 		if self.special_timer >= 16:
 			return Stomp(player)
@@ -123,7 +126,7 @@ class AirAttack3(AirAttack):
 		player.can_attack = False
 		
 	def state_logic(self, player):
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			self.attack_pending = True
 		if self.special_timer >= 16:
 			return Stomp(player)
@@ -148,21 +151,21 @@ class Attack:
 		
 		player.frame_index = 0
 		player.combo_counter += 1
-		ACTIONS['left_click'] = False
+		ACTIONS['x'] = False
 		self.attack_pending = False
 		self.timer = 24
 		self.special_timer = 0
 		player.vel.x = 4 * player.facing
 
 	def build_up_special(self, player, dt):
-		mouse = pygame.mouse.get_pressed()
-		if mouse[0] == 1:
+		keys = pygame.key.get_pressed()
+		if keys[pygame.K_x]:
 			self.special_timer += dt
 		else:
 			self.special_timer = 0
 
 	def state_logic(self, player):
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			self.attack_pending = True
 		if self.special_timer >= 16:
 			return UpperCut(player)
@@ -173,7 +176,6 @@ class Attack:
 				return Attack2(player)
 			else:
 				return Idle(player)
-
 
 	def update(self, player, dt):
 		self.timer -= dt
@@ -190,7 +192,7 @@ class Attack2(Attack):
 		self.timer = 24
 
 	def state_logic(self, player):
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			self.attack_pending = True
 		if self.special_timer >= 16:
 			return UpperCut(player)
@@ -218,7 +220,7 @@ class Attack3(Attack):
 		self.timer = 34
 
 	def state_logic(self, player):
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			self.attack_pending = True
 		if self.special_timer >= 16:
 			return UpperCut(player)
@@ -237,13 +239,13 @@ class Attack3(Attack):
 		player.vel.x -= 0.05 * dt * player.facing
 		player.physics_x(dt)
 
-		player.animate('attack_2', 0.25 * dt, False)
+		player.animate('attack_1', 0.25 * dt, False)
 
 class Stomp:
 	def __init__(self, player):
 		
 		player.frame_index = 0
-		ACTIONS['left_click'] = False
+		ACTIONS['x'] = False
 
 	def state_logic(self, player):
 		
@@ -289,13 +291,13 @@ class Fall:
 
 		if not player.alive:
 			return Death(player)
-		if ACTIONS['left_click'] and player.can_attack:
+		if ACTIONS['x'] and player.can_attack:
 			return AirAttack(player)
-		if ACTIONS['space'] and player.can_dash:
+		if ACTIONS['c'] and player.can_dash:
 			return AirDash(player)
-		if ACTIONS['right_click']:
+		if ACTIONS['up']:
 			player.jump_buffer_active = True
-			ACTIONS['right_click'] = False
+			ACTIONS['up'] = False
 			if player.jump_counter > 0:
 				if player.cyote_timer < player.cyote_timer_threshold:
 					return Jump(player)
@@ -351,17 +353,17 @@ class Idle:
 		if not player.on_ground:
 			return Fall(player)
 
-		if ACTIONS['space']:
+		if ACTIONS['c']:
 			return Dash(player)
 
-		if ACTIONS['left_click'] and player.can_attack:
+		if ACTIONS['x'] and player.can_attack:
 			return Attack(player)
 
 		if ACTIONS['down'] and not player.drop_through:
 			return Crouch(player)
 
-		if ACTIONS['right_click']:
-			ACTIONS['right_click'] = False
+		if ACTIONS['up']:
+			ACTIONS['up'] = False
 			return Jump(player)
 
 		if ACTIONS['up'] and player.collide_ladders():
@@ -407,12 +409,12 @@ class Crouch:
 					player.hitbox.bottom = player.platform.hitbox.bottom
 			return Idle(player)
 
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			player.fire()
 
-		if ACTIONS['right_click']:
+		if ACTIONS['up']:
 			player.drop_through = True
-			ACTIONS['right_click'] = False
+			ACTIONS['up'] = False
 
 		if abs(player.vel.x) >= 0.1:
 			return CrouchMove(player)
@@ -456,12 +458,12 @@ class CrouchMove:
 					player.hitbox.bottom = player.platform.hitbox.bottom
 			return Idle(player)
 
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			player.fire()
 
-		if ACTIONS['right_click']:
+		if ACTIONS['up']:
 			player.drop_through = True
-			ACTIONS['right_click'] = False
+			ACTIONS['up'] = False
 
 		if abs(player.vel.x) <= 0.1:
 			return Crouch(player)
@@ -496,14 +498,14 @@ class Move:
 		if not player.on_ground:
 			return Fall(player)
 
-		if ACTIONS['space']:
+		if ACTIONS['c']:
 			return Dash(player)
 
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			return Attack(player)
 
-		if ACTIONS['right_click']:
-			ACTIONS['right_click'] = False
+		if ACTIONS['up']:
+			ACTIONS['up'] = False
 			return Jump(player)
 
 		if ACTIONS['up'] and player.collide_ladders():
@@ -536,7 +538,7 @@ class OnLadderIdle:
 		player.gun_sprite.kill()
 
 		# stop auto weapons firing
-		ACTIONS['left_click'] = False
+		ACTIONS['x'] = False
 
 	def state_logic(self, player):
 		keys = pygame.key.get_pressed()
@@ -618,11 +620,11 @@ class UpperCut(Fall):
 		if player.vel.y >= 0:
 			return Fall(player)
 
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			return AirAttack(player)
 
-		if ACTIONS['right_click'] and player.jump_counter > 0:
-			ACTIONS['right_click'] = False
+		if ACTIONS['up'] and player.jump_counter > 0:
+			ACTIONS['up'] = False
 
 			return DoubleJump(player)
 
@@ -647,11 +649,11 @@ class Landing:
 		if not player.alive:
 			return Death(player)
 
-		if ACTIONS['left_click']:
+		if ACTIONS['x']:
 			return Attack(player)
 
-		if ACTIONS['right_click']:
-			ACTIONS['right_click'] = False
+		if ACTIONS['up']:
+			ACTIONS['up'] = False
 			return Jump(player)
 
 		if player.frame_index > self.last_frame:
@@ -681,14 +683,14 @@ class Jump(Fall):
 		if player.vel.y >= 0:
 			return Fall(player)
 
-		if ACTIONS['left_click'] and player.can_attack:
+		if ACTIONS['x'] and player.can_attack:
 			return AirAttack(player)
 
-		if ACTIONS['space'] and player.can_dash:
+		if ACTIONS['c'] and player.can_dash:
 			return AirDash(player)
 
-		if ACTIONS['right_click'] and player.jump_counter > 0:
-			ACTIONS['right_click'] = False
+		if ACTIONS['up'] and player.jump_counter > 0:
+			ACTIONS['up'] = False
 
 			return DoubleJump(player)
 
@@ -713,9 +715,9 @@ class DoubleJump(Fall):
 
 		if not player.alive:
 			return Death(player)
-		if ACTIONS['left_click'] and player.can_attack:
+		if ACTIONS['x'] and player.can_attack:
 			return AirAttack(player)
-		if ACTIONS['space'] and player.can_dash:
+		if ACTIONS['c'] and player.can_dash:
 			return AirDash(player)
 		if player.vel.y >= 0:
 			return Fall(player)

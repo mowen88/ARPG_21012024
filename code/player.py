@@ -210,7 +210,7 @@ class Player(pygame.sprite.Sprite):
 
 	def handle_jumping(self, dt):
 		# Double the gravity if not holding jump key to allow variale jump height
-		if not pygame.mouse.get_pressed()[2] and self.vel.y < 0:
+		if not pygame.key.get_pressed()[pygame.K_UP] and self.vel.y < 0:
 			self.acc.y = self.gravity * 2.5
 		else:
 			self.acc.y = self.gravity

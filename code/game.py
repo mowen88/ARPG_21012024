@@ -37,9 +37,14 @@ class Game:
                 if event.key == pygame.K_ESCAPE:
                     ACTIONS['escape'] = True
                     self.running = False
-
                 elif event.key == pygame.K_e:
                     ACTIONS['e'] = True
+                elif event.key == pygame.K_z:
+                    ACTIONS['z'] = True
+                elif event.key == pygame.K_x:
+                    ACTIONS['x'] = True
+                elif event.key == pygame.K_c:
+                    ACTIONS['c'] = True
                 elif event.key == pygame.K_TAB:
                     ACTIONS['tab'] = True
                 elif event.key == pygame.K_SPACE:
@@ -57,6 +62,12 @@ class Game:
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_e:
                     ACTIONS['e'] = False
+                elif event.key == pygame.K_z:
+                    ACTIONS['z'] = False
+                elif event.key == pygame.K_x:
+                    ACTIONS['x'] = False
+                elif event.key == pygame.K_c:
+                    ACTIONS['c'] = False
                 elif event.key == pygame.K_TAB:
                     ACTIONS['tab'] = False
                 elif event.key == pygame.K_SPACE:

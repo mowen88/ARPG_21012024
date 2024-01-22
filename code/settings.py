@@ -7,7 +7,7 @@ RES = WIDTH, HEIGHT = pygame.math.Vector2(400,224)#(384, 216)#(512, 288)#(320, 1
 
 HALF_WIDTH, HALF_HEIGHT = RES/2
 
-ACTIONS = {'escape':False, 'space':False, 'z':False, 'up':False, 'down':False, 'left':False, 'right':False, 'e':False,
+ACTIONS = {'escape':False, 'space':False, 'z':False, 'x':False, 'c':False, 'up':False, 'down':False, 'left':False, 'right':False, 'e':False,
 			'tab':False, 'left_click':False, 'right_click':False, 'scroll_up':False, 'scroll_down':False, 'r':False}
 
 LAYERS = {'background':0,
