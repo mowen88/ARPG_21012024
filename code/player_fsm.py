@@ -88,6 +88,7 @@ class AirAttack:
 		self.build_up_special(player, dt)
 		player.acc.x = 0
 		player.vel.x -= 0.01 * dt * player.facing
+		player.vel.y = 0
 		player.physics_x(dt)
 		player.animate('attack_1', 0.25 * dt, False)
 
@@ -115,6 +116,7 @@ class AirAttack2(AirAttack):
 		self.build_up_special(player, dt)
 		player.acc.x = 0
 		player.vel.x -= 0.01 * dt * player.facing
+		player.vel.y = 0
 		player.physics_x(dt)
 		player.animate('attack_2', 0.25 * dt, False)
 
@@ -143,6 +145,7 @@ class AirAttack3(AirAttack):
 		self.build_up_special(player, dt)
 		player.acc.x = 0
 		player.vel.x -= 0.01 * dt * player.facing
+		player.vel.y = 0
 		player.physics_x(dt)
 		player.animate('attack_1', 0.25 * dt, False)
 
