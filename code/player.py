@@ -40,6 +40,7 @@ class Player(pygame.sprite.Sprite):
 
 		self.combo_counter = 0
 		self.can_attack = True
+		self.can_dash = True
 
 		self.jump_counter = 0
 		self.cyote_timer = 0

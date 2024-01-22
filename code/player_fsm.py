@@ -1,6 +1,46 @@
 import pygame
 from settings import *
 
+class Dash:
+	def __init__(self, player):
+		
+		player.frame_index = 0
+		self.timer = 24
+		player.vel.x = 20 * player.facing
+
+	def state_logic(self, player):
+		if abs(player.vel.x) < 0.2:
+			player.vel.x = 0
+		if self.timer <= 0:
+			return Idle(player)
+
+	def update(self, player, dt):
+		self.timer -= dt
+		player.acc.x = 0
+		player.vel.x -= 0.05 * dt * player.facing
+		player.physics_x(dt)
+		player.animate('attack_1', 0.25 * dt, False)
+
+class AirDash:
+	def __init__(self, player):
+		Dash. __init__(self, player)
+
+		player.can_dash = False
+		
+	def state_logic(self, player):
+
+		if abs(player.vel.x) < 0.2:
+			player.vel.x = 0
+		if self.timer <= 0:		
+			return Fall(player)
+
+	def update(self, player, dt):
+		self.timer -= dt
+		player.acc.x = 0
+		player.vel.x -= 0.05 * dt * player.facing
+		player.physics_x(dt)
+		player.animate('attack_1', 0.25 * dt, False)
+
 class AirAttack:
 	def __init__(self, player):
 		
@@ -194,13 +234,7 @@ class Stomp:
 	def __init__(self, player):
 		
 		player.frame_index = 0
-
 		ACTIONS['left_click'] = False
-
-		if player.facing == 1:
-			player.vel.x = -10
-		else:
-			player.vel.x = 10
 
 	def state_logic(self, player):
 		
@@ -249,7 +283,8 @@ class Fall:
 
 		if ACTIONS['left_click'] and player.can_attack:
 			return AirAttack(player)
-
+		if ACTIONS['space'] and player.can_dash:
+			return AirDash(player)
 		if ACTIONS['right_click']:
 			player.jump_buffer_active = True
 			ACTIONS['right_click'] = False
@@ -288,6 +323,7 @@ class Idle:
 		player.frame_index = 0
 		player.acc_rate = 0.4
 		player.can_attack = True
+		player.can_dash = True
 
 	def state_logic(self, player):
 
@@ -306,6 +342,9 @@ class Idle:
 
 		if not player.on_ground:
 			return Fall(player)
+
+		if ACTIONS['space']:
+			return Dash(player)
 
 		if ACTIONS['left_click'] and player.can_attack:
 			return Attack(player)
@@ -448,6 +487,9 @@ class Move:
 
 		if not player.on_ground:
 			return Fall(player)
+
+		if ACTIONS['space']:
+			return Dash(player)
 
 		if ACTIONS['left_click']:
 			return Attack(player)
@@ -636,6 +678,9 @@ class Jump(Fall):
 
 		if ACTIONS['left_click'] and player.can_attack:
 			return AirAttack(player)
+
+		if ACTIONS['space'] and player.can_dash:
+			return AirDash(player)
 
 		if ACTIONS['right_click'] and player.jump_counter > 0:
 			ACTIONS['right_click'] = False
