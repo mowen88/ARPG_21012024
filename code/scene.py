@@ -6,6 +6,7 @@ from pytmx.util_pygame import load_pygame
 from camera import Camera
 from player import Player
 from objects import Tile
+from weapons import Weapon
 
 class Scene(State):
 	def __init__(self, game):
@@ -54,6 +55,9 @@ class Scene(State):
 
 		elif particle_type == 'blood':
 			pass
+
+	def create_melee(self, weapon_type, attack_type):
+		self.player.weapon = Weapon(self.game, self, [self.update_sprites, self.drawn_sprites], f'../assets/weapons/{weapon_type}/{attack_type}', z= LAYERS['blocks'])
 
 	def update(self, dt):
 		self.update_sprites.update(dt)

@@ -52,14 +52,14 @@ class Player(pygame.sprite.Sprite):
 		self.alive = True
 		self.state = Fall(self)
 
+		self.weapon = None
+
 	def import_images(self):
 		for animation in self.animations.keys():
 			full_path = f'../assets/characters/{self.name}/' + animation
 			self.animations[animation] = self.game.get_folder_images(full_path)
 
 	def animate(self, state, speed, loop=True):
-
-		direction = self.facing if self.facing == 1 else 0
 
 		self.frame_index += speed
 
@@ -69,6 +69,7 @@ class Player(pygame.sprite.Sprite):
 			else:
 				self.frame_index = len(self.animations[state]) -1
 		
+		direction = self.facing if self.facing == 1 else 0
 		self.image = pygame.transform.flip(self.animations[state][int(self.frame_index)], direction-1, False)
 
 	def jump(self, height):
@@ -210,7 +211,7 @@ class Player(pygame.sprite.Sprite):
 
 	def handle_jumping(self, dt):
 		# Double the gravity if not holding jump key to allow variale jump height
-		if not pygame.key.get_pressed()[pygame.K_UP] and self.vel.y < 0:
+		if not pygame.key.get_pressed()[pygame.K_z] and self.vel.y < 0:
 			self.acc.y = self.gravity * 2.5
 		else:
 			self.acc.y = self.gravity
