@@ -12,7 +12,7 @@ class Player(pygame.sprite.Sprite):
 		self.name = name
 		self.z = z
 		
-		self.animations = {'idle':[], 'run':[], 'jump':[], 'fall':[], 'land':[], 'attack_0':[], 'attack_1':[], 'attack_2':[]}
+		self.animations = {'idle':[], 'run':[], 'jump':[], 'fall':[], 'land':[], 'dash':[], 'up_attack':[], 'attack_1':[], 'attack_2':[]}
 		self.import_images()
 
 		self.frame_index = 0
@@ -25,7 +25,7 @@ class Player(pygame.sprite.Sprite):
 
 		self.gravity = 0.2
 		self.acc_rate = 0.4
-		self.fric = -0.2
+		self.fric = -0.18
 		self.acc = pygame.math.Vector2(0, self.gravity)	
 		self.vel = pygame.math.Vector2()
 		self.max_fall_speed = 6

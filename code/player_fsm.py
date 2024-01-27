@@ -193,7 +193,7 @@ class Dash(Move):
 
 	def state_logic(self, player):
 
-		if player.frame_index <= len(player.animations['attack_1'])-1:
+		if player.frame_index <= len(player.animations['dash'])-1:
 			if ACTIONS['z']:
 				ACTIONS['z'] = False
 				return Jump(player)
@@ -211,7 +211,7 @@ class Dash(Move):
 		player.acc.x = 0
 		player.vel.y = 0
 		player.physics_x(dt)
-		player.animate('attack_1', 0.25 * dt, False)
+		player.animate('dash', 0.25 * dt, False)
 
 class AirDash:
 	def __init__(self, player):
@@ -343,7 +343,7 @@ class Attack(Dash):
 		ACTIONS['x'] = False
 		self.attack_pending = False
 		self.timer = 48
-		self.transition_time = 34
+		self.transition_time = 32
 		self.special_time = 16
 		self.special_timer = 0
 		player.vel.x = 4 * player.facing
@@ -450,6 +450,40 @@ class Attack3(Attack):
 		player.acc.x = 0
 		player.physics_x(dt)
 		player.animate('attack_1', 0.25 * dt, False)
+
+class UpAttack(Idle):
+	def __init__(self, player):
+
+		player.frame_index = 0
+		ACTIONS['x'] = False
+		player.jump(player.jump_height * 1.5)
+		player.scene.create_particle('jump', player.hitbox.midbottom)
+		self.kill_weapon(player)
+		player.scene.create_melee('sword', 'up_attack')
+		
+
+	def state_logic(self, player):
+
+		if not player.alive:
+			return Death(player)
+
+		if player.vel.y >= 0:
+			return Fall(player)
+
+		if ACTIONS['x']:
+			return AirAttack(player)
+
+		if ACTIONS['z'] and player.jump_counter > 0:
+			ACTIONS['z'] = False
+
+			return DoubleJump(player)
+
+	def update(self, player, dt):
+
+		player.acc.x = 0
+		player.input()
+		player.physics_y(dt)
+		player.animate('up_attack', 0.25 * dt, False)
 
 class DownAttack:
 	def __init__(self, player):
@@ -644,39 +678,6 @@ class OnLadderMove:
 		player.ladder_physics(dt)
 
 		player.animate('on_ladder_move', 0.25 * dt)
-
-class UpAttack(Idle):
-	def __init__(self, player):
-
-		player.frame_index = 0
-		player.jump(player.jump_height * 1.5)
-		player.scene.create_particle('jump', player.hitbox.midbottom)
-		self.kill_weapon(player)
-		ACTIONS['x'] = False
-
-	def state_logic(self, player):
-
-		if not player.alive:
-			return Death(player)
-
-		if player.vel.y >= 0:
-			return Fall(player)
-
-		if ACTIONS['x']:
-			return AirAttack(player)
-
-		if ACTIONS['z'] and player.jump_counter > 0:
-			ACTIONS['z'] = False
-
-			return DoubleJump(player)
-
-	def update(self, player, dt):
-
-		player.acc.x = 0
-		player.input()
-		player.physics_y(dt)
-
-		player.animate('jump', 0.25 * dt, False)
 
 class Landing:
 	def __init__(self, player):
