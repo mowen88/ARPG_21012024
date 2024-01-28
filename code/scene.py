@@ -57,7 +57,7 @@ class Scene(State):
 			pass
 
 	def create_melee(self, weapon_type, attack_type):
-		self.player.weapon = Weapon(self.game, self, [self.update_sprites, self.drawn_sprites], f'../assets/weapons/{weapon_type}/{attack_type}', z= LAYERS['blocks'])
+		self.player.weapon = Weapon(self.game, self, [self.update_sprites, self.drawn_sprites], f'../assets/weapons/{weapon_type}/{attack_type}', z= LAYERS['particles'])
 
 	def update(self, dt):
 		self.update_sprites.update(dt)
@@ -71,8 +71,8 @@ class Scene(State):
 		self.drawn_sprites.offset_draw(self.player.rect.center)
 		self.debug([str('FPS: '+ str(round(self.game.clock.get_fps(), 2))),
 					str('vel: '+ str(round(self.player.vel, 2))),
-					str('facing: '+ str(self.player.jump_counter)),
-					str('state: '+ str(self.player.state)),
+					str('combo: '+ str(self.player.jump_counter)),
+					str('state: '+ str(self.player.facing)),
 					None,])
 
 		

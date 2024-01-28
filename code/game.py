@@ -29,7 +29,7 @@ class Game:
     def get_events(self):
         for event in pygame.event.get(): 
             if event.type == pygame.QUIT:
-                self.running = False
+                self.running = Falsex
                 pygame.quit()
                 sys.exit()
                 
@@ -122,6 +122,12 @@ class Game:
             for row in layer:
                 grid.append(list(row))
             return grid
+
+    def get_file_names(self, path):
+        file_dict = {}
+        for file_name in os.listdir(path):
+            file_dict.update({file_name:[]})
+        return file_dict
 
     def get_folder_images(self, path):
         surf_list = []

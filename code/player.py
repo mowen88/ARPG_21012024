@@ -1,4 +1,4 @@
-import pygame, math, random
+import pygame, math, random, os
 from settings import *
 from player_fsm import Fall
 
@@ -12,7 +12,6 @@ class Player(pygame.sprite.Sprite):
 		self.name = name
 		self.z = z
 		
-		self.animations = {'idle':[], 'run':[], 'jump':[], 'fall':[], 'land':[], 'dash':[], 'up_attack':[], 'attack_1':[], 'attack_2':[]}
 		self.import_images()
 
 		self.frame_index = 0
@@ -38,7 +37,7 @@ class Player(pygame.sprite.Sprite):
 		self.on_ground = False
 		self.drop_through = False
 
-		self.combo_counter = 0
+		self.combo_counter = 1
 		self.can_attack = True
 		self.can_dash = True
 
@@ -55,8 +54,12 @@ class Player(pygame.sprite.Sprite):
 		self.weapon = None
 
 	def import_images(self):
+		path = f'../assets/characters/{self.name}/'
+
+		self.animations = self.game.get_file_names(path)
+
 		for animation in self.animations.keys():
-			full_path = f'../assets/characters/{self.name}/' + animation
+			full_path = path + animation
 			self.animations[animation] = self.game.get_folder_images(full_path)
 
 	def animate(self, state, speed, loop=True):
@@ -236,8 +239,8 @@ class Player(pygame.sprite.Sprite):
 
 	def state_logic(self):
 		new_state = self.state.state_logic(self)
-		if new_state: self.state = new_state
-		else: self.state
+		
+		self.state = new_state if new_state else self.state
 
 	def update(self, dt):
 

@@ -68,6 +68,7 @@ class Idle:
 	def __init__(self, player):
 		
 		player.jump_counter = 1
+		player.combo_counter = 1
 		player.frame_index = 0
 		player.acc_rate = 0.4
 		player.can_attack = True
@@ -183,13 +184,9 @@ class Dash(Move):
 		player.frame_index = 0
 		ACTIONS['c'] = False
 		self.attack_pending = False
-		self.timer = 64
-		self.transition_time = 36
+		self.timer = 48
+		self.transition_time = 40
 		player.vel.x = 24 * player.facing
-
-	def stop(self, player):
-		if abs(player.vel.x) < 0.2:
-			player.vel.x = 0
 
 	def state_logic(self, player):
 
@@ -207,10 +204,9 @@ class Dash(Move):
 
 	def update(self, player, dt):
 		self.timer -= dt
-		self.stop(player)
 		player.acc.x = 0
-		player.vel.y = 0
 		player.physics_x(dt)
+		player.physics_y(dt)
 		player.animate('dash', 0.25 * dt, False)
 
 class AirDash:
@@ -219,17 +215,22 @@ class AirDash:
 
 		player.can_dash = False
 		ACTIONS['c'] = False
-		
+
 	def state_logic(self, player):
 
-		if abs(player.vel.x) < 0.2:
-			player.vel.x = 0
-		if ACTIONS['z']:
-			ACTIONS['z'] = False
-			if player.jump_counter > 0:
-				return DoubleJump(player)
-		if self.timer <= 0:		
+		if player.frame_index <= len(player.animations['air_dash'])-1:
+			if ACTIONS['z']:
+				ACTIONS['z'] = False
+				if player.jump_counter > 0:
+					return DoubleJump(player)
+			if self.timer <= self.transition_time:
+				if self.attack_pending:
+					return Attack(player)
+				elif not (ACTIONS['left'] and ACTIONS['right']) and (ACTIONS['left'] or ACTIONS['right']):
+					return Fall(player)
+		else:
 			return Fall(player)
+
 
 	def update(self, player, dt):
 		self.timer -= dt
@@ -237,123 +238,39 @@ class AirDash:
 		player.vel.x -= 0.04 * dt * player.facing
 		player.vel.y = 0
 		player.physics_x(dt)
-		player.animate('attack_2', 0.25 * dt, False)
-
-class AirAttack:
-	def __init__(self, player):
-		
-		player.frame_index = 0
-		player.combo_counter += 1
-		ACTIONS['x'] = False
-		self.attack_pending = False
-		self.timer = 24
-		self.special_timer = 0
-
-	def build_up_special(self, player, dt):
-		keys = pygame.key.get_pressed()
-		if keys[pygame.K_x]:
-			self.special_timer += dt
-		else:
-			self.special_timer = 0
-
-	def state_logic(self, player):
-		if ACTIONS['x']:
-			self.attack_pending = True
-		if self.special_timer >= 16:
-			return DownAttack(player)
-		if abs(player.vel.x) < 0.25:
-			player.vel.x = 0
-		if self.timer <= 0:
-			if self.attack_pending:
-				return AirAttack2(player)
-			else:
-				return Fall(player)
-
-	def update(self, player, dt):
-		self.timer -= dt
-		self.build_up_special(player, dt)
-		player.acc.x = 0
-		player.vel.x -= 0.01 * dt * player.facing
-		player.vel.y = 0
-		player.physics_x(dt)
-		player.animate('attack_1', 0.25 * dt, False)
-
-class AirAttack2(AirAttack):
-	def __init__(self, player):
-		AirAttack. __init__(self, player)
-
-		self.timer = 24
-		
-	def state_logic(self, player):
-		if ACTIONS['x']:
-			self.attack_pending = True
-		if self.special_timer >= 16:
-			return DownAttack(player)
-		if abs(player.vel.x) < 0.25:
-			player.vel.x = 0
-		if self.timer <= 0:
-			if self.attack_pending:
-				return AirAttack3(player)
-			else:
-				return Fall(player)
-
-	def update(self, player, dt):
-		self.timer -= dt
-		self.build_up_special(player, dt)
-		player.acc.x = 0
-		player.vel.x -= 0.01 * dt * player.facing
-		player.vel.y = 0
-		player.physics_x(dt)
-		player.animate('attack_2', 0.25 * dt, False)
-
-class AirAttack3(AirAttack):
-	def __init__(self, player):
-		AirAttack. __init__(self, player)
-
-		self.timer = 34
-		player.can_attack = False
-		
-	def state_logic(self, player):
-		if ACTIONS['x']:
-			self.attack_pending = True
-		if self.special_timer >= 16:
-			return DownAttack(player)
-		if abs(player.vel.x) < 0.25:
-			player.vel.x = 0
-		if self.timer <= 0:
-			if self.attack_pending:
-				return Fall(player)
-			else:
-				return Fall(player)
-
-	def update(self, player, dt):
-		self.timer -= dt
-		self.build_up_special(player, dt)
-		player.acc.x = 0
-		player.vel.x -= 0.01 * dt * player.facing
-		player.vel.y = 0
-		player.physics_x(dt)
-		player.animate('attack_1', 0.25 * dt, False)
+		player.animate('air_dash', 0.25 * dt, False)
 
 class Attack(Dash):
 	def __init__(self, player):
+
+		self.interval_times = {1:18, 2:18, 3:32}
 		
 		player.frame_index = 0
-		player.combo_counter += 1
 		ACTIONS['x'] = False
 		self.attack_pending = False
 		self.timer = 48
-		self.transition_time = 32
+		self.transition_time = self.attack_cancel_intervals(player)
 		self.special_time = 16
 		self.special_timer = 0
 		player.vel.x = 4 * player.facing
 
 		self.kill_weapon(player)
-		player.scene.create_melee('sword', 'attack_1')
+		player.scene.create_melee('sword', f'attack_{player.combo_counter}')
+
+	def attack_cancel_intervals(self, player):
+		for key, value in self.interval_times.items():
+			if player.combo_counter == key:
+				return self.timer - value
 
 	def stop(self, player):
 		if abs(player.vel.x) < 0.2:
 			player.vel.x = 0
+
+	def increment_combo_count(self, player):
+		if player.combo_counter < 3:
+			player.combo_counter += 1
+		else:
+			player.combo_counter = 1
 
 	def build_up_special(self, player, dt):
 		keys = pygame.key.get_pressed()
@@ -367,12 +284,16 @@ class Attack(Dash):
 		if ACTIONS['x']:
 			self.attack_pending = True
 
-		if player.frame_index <= len(player.animations['attack_1'])-1:
+		if player.frame_index <= len(player.animations[f'attack_{player.combo_counter}'])-1:
 			if self.special_timer >= self.special_time:
 				return UpAttack(player)
 			elif self.timer <= self.transition_time:
 				if self.attack_pending:
-					return Attack2(player)
+					self.increment_combo_count(player)
+					if player.on_ground:
+						return Attack(player)
+					else:
+						return AirAttack(player)
 				elif not (ACTIONS['left'] and ACTIONS['right']) and (ACTIONS['left'] or ACTIONS['right']):
 					return Move(player)
 		else:
@@ -382,86 +303,52 @@ class Attack(Dash):
 
 		self.timer -= dt
 		self.build_up_special(player, dt)
-		self.stop(player)
 		player.acc.x = 0
 		player.physics_x(dt)
-		player.animate('attack_1', 0.25 * dt, False)
+		player.physics_y(dt)
+		player.animate(f'attack_{player.combo_counter}', 0.25 * dt, False)
 
-class Attack2(Attack):
+class AirAttack(Attack):
 	def __init__(self, player):
-		Attack. __init__(self, player)
+		Attack.__init__(self, player)
 
-		self.transition_time = 26
-		self.kill_weapon(player)
-		player.scene.create_melee('sword', 'attack_2')
+		player.can_attack = False
 
 	def state_logic(self, player):
 		if ACTIONS['x']:
 			self.attack_pending = True
 
-		if player.frame_index <= len(player.animations['attack_2'])-1:
+		if player.frame_index <= len(player.animations[f'attack_{player.combo_counter}'])-1:
+			
 			if self.special_timer >= self.special_time:
-				return UpAttack(player)
+				return DownAttack(player)
 			elif self.timer <= self.transition_time:
 				if self.attack_pending:
-					return Attack3(player)
+					self.increment_combo_count(player)
+					return AirAttack(player)
 				elif not (ACTIONS['left'] and ACTIONS['right']) and (ACTIONS['left'] or ACTIONS['right']):
-					return Move(player)
+					return Fall(player)
 		else:
-			return Idle(player)
-
+			return Fall(player)
 
 	def update(self, player, dt):
 		self.timer -= dt
 		self.build_up_special(player, dt)
-		self.stop(player)
 		player.acc.x = 0
 		player.physics_x(dt)
-		player.animate('attack_2', 0.25 * dt, False)
+		player.animate(f'attack_{player.combo_counter}', 0.25 * dt, False)
 
-class Attack3(Attack):
-	def __init__(self, player):
-		Attack. __init__(self, player)
-
-		self.transition_time = 16
-		self.kill_weapon(player)
-		player.scene.create_melee('sword', 'attack_1')
-
-	def state_logic(self, player):
-		if ACTIONS['x']:
-			self.attack_pending = True
-
-		if player.frame_index <= len(player.animations['attack_1'])-1:
-			if self.special_timer >= self.special_time:
-				return UpAttack(player)
-			elif self.timer <= self.transition_time:
-				if self.attack_pending:
-					return Attack(player)
-				elif not (ACTIONS['left'] and ACTIONS['right']) and (ACTIONS['left'] or ACTIONS['right']):
-					return Move(player)
-		else:
-			return Idle(player)
-
-
-	def update(self, player, dt):
-		self.timer -= dt
-		self.build_up_special(player, dt)
-		self.stop(player)
-		player.acc.x = 0
-		player.physics_x(dt)
-		player.animate('attack_1', 0.25 * dt, False)
-
-class UpAttack(Idle):
+class UpAttack(Attack):
 	def __init__(self, player):
 
 		player.frame_index = 0
+		player.combo_counter = 1
 		ACTIONS['x'] = False
 		player.jump(player.jump_height * 1.5)
 		player.scene.create_particle('jump', player.hitbox.midbottom)
 		self.kill_weapon(player)
 		player.scene.create_melee('sword', 'up_attack')
 		
-
 	def state_logic(self, player):
 
 		if not player.alive:
@@ -485,27 +372,41 @@ class UpAttack(Idle):
 		player.physics_y(dt)
 		player.animate('up_attack', 0.25 * dt, False)
 
-class DownAttack:
+class DownAttack(Attack):
 	def __init__(self, player):
 		
 		player.frame_index = 0
 		ACTIONS['x'] = False
+		self.kill_weapon(player)
+		player.scene.create_melee('sword', 'down_attack')
 
 	def state_logic(self, player):
 		
 		if player.on_ground:
-			return Idle(player)
-
-	def DownAttack(self, player, dt):
-		player.vel.y += 1 * dt
+			return Stomp(player)
 
 	def update(self, player, dt):
 		player.acc.x = 0
-
-		self.DownAttack(player, dt)
-		
+		player.vel.y += 1 * dt
 		player.physics_y(dt)
-		player.animate('attack_1', 0.1 * dt, False)
+		player.animate('down_attack', 0.25 * dt, False)
+
+class Stomp(Attack):
+	def __init__(self, player):
+
+		player.frame_index = 0
+		self.timer = 48
+		self.kill_weapon(player)
+		player.scene.create_melee('sword', 'stomp_attack')
+
+	def state_logic(self, player):
+		if self.timer <= 0:
+			return Idle(player)
+
+	def update(self, player, dt):
+		self.timer -= dt
+		player.vel.y = 0
+		player.animate('stomp_attack', 0.25 * dt, False)
 		
 class Crouch:
 	def __init__(self, player):
@@ -715,6 +616,9 @@ class Jump(Fall):
 	def __init__(self, player):
 
 		player.frame_index = 0
+		player.combo_counter = 1
+		player.can_attack = True
+		player.can_dash = True
 		player.jump(player.jump_height)
 		player.scene.create_particle('jump', player.hitbox.midbottom)
 

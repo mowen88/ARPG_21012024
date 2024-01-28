@@ -18,16 +18,18 @@ class Weapon(pygame.sprite.Sprite):
 
 	def animate(self, animation_speed):
 
+
 		self.frame_index += animation_speed
-		self.frame_index = self.frame_index % len(self.frames)	
-		self.image = self.frames[int(self.frame_index)]
-		if self.frame_index > len(self.frames)-1:	
+
+		if self.frame_index >= len(self.frames)-1:	
 			self.kill()
 
+		#self.frame_index = self.frame_index % len(self.frames)	
 		direction = self.scene.player.facing if self.scene.player.facing == 1 else 0
 		self.image = pygame.transform.flip(self.frames[int(self.frame_index)], direction-1, False)
+		
 
 	def update(self, dt):
-		self.animate(0.25 * dt)
 		self.rect.center = self.scene.player.rect.center
+		self.animate(0.3 * dt)
 
